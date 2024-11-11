@@ -1,7 +1,22 @@
 'use client';
 import { useState, useEffect } from "react";
 import axios from "axios";
-// Function to fetch orders using axios
+import toast, { Toaster } from "react-hot-toast";
+
+interface Order {
+  _id: string;
+  documentType: string;
+  description: string;
+  printType: string;
+  copies: number;
+  status: string;
+  quotationAmount?: number;
+  file?: {
+    name: string;
+    uri: string;
+  };
+}
+
 const fetchOrders = async () => {
   try {
     const response = await axios.get("http://localhost:4000/api/orders");
@@ -11,13 +26,32 @@ const fetchOrders = async () => {
   }
 };
 
+const acceptOrder = async (orderId: string) => {
+  try {
+    await axios.patch(`http://localhost:4000/api/orders/${orderId}`, { status: 'Accepted' });
+    toast.success("Order accepted!");
+  } catch (error) {
+    console.error("Error accepting order:", error);
+    toast.error("Failed to accept order");
+  }
+};
+
+const addQuotation = async (orderId: string, quotationAmount: number) => {
+  try {
+    await axios.patch(`http://localhost:4000/api/orders/${orderId}/quotation`, { quotationAmount });
+    toast.success("Quotation added!");
+  } catch (error) {
+    console.error("Error adding quotation:", error);
+    toast.error("Failed to add quotation");
+  }
+};
+
 const TableThree = () => {
-  const [orders, setOrders] = useState<any[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Fetch orders from the API
     const loadOrders = async () => {
       try {
         const data = await fetchOrders();
@@ -29,51 +63,45 @@ const TableThree = () => {
         setLoading(false);
       }
     };
-
     loadOrders();
   }, []);
 
-  if (loading) {
-    return <div>Loading...</div>;
-  }
+  const handleAccept = async (orderId: string) => {
+    await acceptOrder(orderId);
+    setOrders(orders.map(order => order._id === orderId ? { ...order, status: 'Accepted' } : order));
+  };
 
-  if (error) {
-    return <div>{error}</div>;
-  }
+  const handleQuotation = async (orderId: string) => {
+    const quotationAmount = prompt("Enter the quotation amount:");
+    if (quotationAmount) {
+      await addQuotation(orderId, parseFloat(quotationAmount));
+      setOrders(orders.map(order => order._id === orderId ? { ...order, quotationAmount: parseFloat(quotationAmount) } : order));
+    }
+  };
+
+  if (loading) return <div>Loading...</div>;
+  if (error) return <div>{error}</div>;
 
   return (
     <div className="rounded-sm border border-stroke bg-white px-5 pb-2.5 pt-6 shadow-default dark:border-strokedark dark:bg-boxdark sm:px-7.5 xl:pb-1">
+      <Toaster position="top-right" reverseOrder={false} />
       <div className="max-w-full overflow-x-auto">
         <table className="w-full table-auto">
           <thead>
             <tr className="bg-gray-2 text-left dark:bg-meta-4">
-              <th className="min-w-[220px] px-4 py-4 font-medium text-black dark:text-white xl:pl-11">
-                Document Type
-              </th>
-              <th className="min-w-[150px] px-4 py-4 font-medium text-black dark:text-white">
-                Description
-              </th>
-              <th className="min-w-[120px] px-4 py-4 font-medium text-black dark:text-white">
-                Print Type
-              </th>
-              <th className="min-w-[120px] px-4 py-4 font-medium text-black dark:text-white">
-                Copies
-              </th>
-              <th className="px-4 py-4 font-medium text-black dark:text-white">
-                File Name
-              </th>
-              <th className="px-4 py-4 font-medium text-black dark:text-white">
-                Actions
-              </th>
+              <th className="min-w-[220px] px-4 py-4 font-medium text-black dark:text-white xl:pl-11">Document Type</th>
+              <th className="min-w-[150px] px-4 py-4 font-medium text-black dark:text-white">Description</th>
+              <th className="min-w-[120px] px-4 py-4 font-medium text-black dark:text-white">Print Type</th>
+              <th className="min-w-[120px] px-4 py-4 font-medium text-black dark:text-white">Copies</th>
+              <th className="px-4 py-4 font-medium text-black dark:text-white">File Name</th>
+              <th className="px-4 py-4 font-medium text-black dark:text-white">Actions</th>
             </tr>
           </thead>
           <tbody>
-            {orders.map((order, key) => (
-              <tr key={key}>
+            {orders.map((order) => (
+              <tr key={order._id}>
                 <td className="border-b border-[#eee] px-4 py-5 pl-9 dark:border-strokedark xl:pl-11">
-                  <h5 className="font-medium text-black dark:text-white">
-                    {order.documentType}
-                  </h5>
+                  <h5 className="font-medium text-black dark:text-white">{order.documentType}</h5>
                 </td>
                 <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
                   <p className="text-black dark:text-white">{order.description}</p>
@@ -95,22 +123,11 @@ const TableThree = () => {
                 </td>
                 <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
                   <div className="flex items-center space-x-3.5">
-                    <button className="hover:text-primary">
-                      {/* Edit Icon */}
-                      <svg
-                        className="fill-current"
-                        width="18"
-                        height="18"
-                        viewBox="0 0 18 18"
-                        fill="none"
-                        xmlns="http://www.w3.org/2000/svg"
-                      >
-                        {/* Edit Icon */}
-                      </svg>
-                    </button>
-                    <button className="hover:text-primary">
-                      {/* Delete Icon */}
-                    </button>
+                    {order.status !== 'Accepted' ? (
+                      <button onClick={() => handleAccept(order._id)} className="text-green-600 hover:text-green-800">Accept</button>
+                    ) : (
+                      <button onClick={() => handleQuotation(order._id)} className="text-blue-600 hover:text-blue-800">Add Quotation</button>
+                    )}
                   </div>
                 </td>
               </tr>
