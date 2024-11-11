@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from "react";
 import axios from "axios";
+import { FaEdit, FaTrashAlt, FaCheck, FaDollarSign } from "react-icons/fa";
 import toast, { Toaster } from "react-hot-toast";
 
 interface Order {
@@ -10,6 +11,7 @@ interface Order {
   printType: string;
   copies: number;
   status: string;
+  paymentStatus: string;
   quotationAmount?: number;
   file?: {
     name: string;
@@ -46,6 +48,16 @@ const addQuotation = async (orderId: string, quotationAmount: number) => {
   }
 };
 
+const deleteOrder = async (orderId: string) => {
+  try {
+    await axios.delete(`http://localhost:4000/api/orders/${orderId}`);
+    toast.success("Order deleted!");
+  } catch (error) {
+    console.error("Error deleting order:", error);
+    toast.error("Failed to delete order");
+  }
+};
+
 const TableThree = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
@@ -79,6 +91,10 @@ const TableThree = () => {
     }
   };
 
+  const handleDelete = async (orderId: string) => {
+    await deleteOrder(orderId);
+    setOrders(orders.filter(order => order._id !== orderId));
+  };
   if (loading) return <div>Loading...</div>;
   if (error) return <div>{error}</div>;
 
@@ -94,6 +110,8 @@ const TableThree = () => {
               <th className="min-w-[120px] px-4 py-4 font-medium text-black dark:text-white">Print Type</th>
               <th className="min-w-[120px] px-4 py-4 font-medium text-black dark:text-white">Copies</th>
               <th className="px-4 py-4 font-medium text-black dark:text-white">File Name</th>
+              <th className="px-4 py-4 font-medium text-black dark:text-white">Status</th>
+              <th className="px-4 py-4 font-medium text-black dark:text-white">Payment Status</th>
               <th className="px-4 py-4 font-medium text-black dark:text-white">Actions</th>
             </tr>
           </thead>
@@ -122,12 +140,39 @@ const TableThree = () => {
                   )}
                 </td>
                 <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
+                  <span className={`inline-flex items-center px-3 py-1 rounded-full text-white ${
+                    order.status === 'Accepted' ? 'bg-green-500' : 'bg-gray-400'
+                  }`}>
+                    {order.status}
+                  </span>
+                </td>
+                <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
+                  <span className={`inline-flex items-center px-3 py-1 rounded-full text-white ${
+                    order.paymentStatus === 'Paid' ? 'bg-green-500' : 'bg-red-500'
+                  }`}>
+                    {order.paymentStatus === 'Paid' ? <FaDollarSign className="mr-1" /> : <FaCheck className="mr-1" />}
+                    {order.paymentStatus}
+                  </span>
+                </td>
+                <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
                   <div className="flex items-center space-x-3.5">
                     {order.status !== 'Accepted' ? (
-                      <button onClick={() => handleAccept(order._id)} className="text-green-600 hover:text-green-800">Accept</button>
+                      <button onClick={() => handleAccept(order._id)} className="text-green-600 hover:text-green-800">
+                        <FaCheck />
+                      </button>
                     ) : (
-                      <button onClick={() => handleQuotation(order._id)} className="text-blue-600 hover:text-blue-800">Add Quotation</button>
+                      order.paymentStatus !== 'Paid' && (
+                        <button onClick={() => handleQuotation(order._id)} className="text-blue-600 hover:text-blue-800">
+                          <FaDollarSign />
+                        </button>
+                      )
                     )}
+                    <button className="text-blue-600 hover:text-blue-800">
+                      <FaEdit />
+                    </button>
+                    <button className="text-red-600 hover:text-red-800" onClick={() => handleDelete(order._id)}>
+                      <FaTrashAlt />
+                    </button>
                   </div>
                 </td>
               </tr>
