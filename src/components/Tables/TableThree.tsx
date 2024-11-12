@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from "react";
 import axios from "axios";
-import { FaEdit, FaTrashAlt, FaCheck, FaDollarSign } from "react-icons/fa";
+import { FaEdit, FaTrashAlt, FaCheck, FaDollarSign, FaDownload } from "react-icons/fa";
 import toast, { Toaster } from "react-hot-toast";
 
 interface Order {
@@ -13,7 +13,7 @@ interface Order {
   status: string;
   paymentStatus: string;
   quotationAmount?: number;
-  file?: {
+  files?: {
     name: string;
     uri: string;
   };
@@ -21,7 +21,7 @@ interface Order {
 
 const fetchOrders = async () => {
   try {
-    const response = await axios.get("http://localhost:4000/api/orders");
+    const response = await axios.get("https://printit.praisewebsolutions.com/api/orders");
     return response.data;
   } catch (error) {
     throw new Error("Failed to fetch orders");
@@ -30,7 +30,7 @@ const fetchOrders = async () => {
 
 const acceptOrder = async (orderId: string) => {
   try {
-    await axios.patch(`http://localhost:4000/api/orders/${orderId}`, { status: 'Accepted' });
+    await axios.patch(`https://printit.praisewebsolutions.com/api/orders/${orderId}`, { status: 'Accepted' });
     toast.success("Order accepted!");
   } catch (error) {
     console.error("Error accepting order:", error);
@@ -40,7 +40,7 @@ const acceptOrder = async (orderId: string) => {
 
 const addQuotation = async (orderId: string, quotationAmount: number) => {
   try {
-    await axios.patch(`http://localhost:4000/api/orders/${orderId}/quotation`, { quotationAmount });
+    await axios.patch(`https://printit.praisewebsolutions.com/api/orders/${orderId}/quotation`, { quotationAmount });
     toast.success("Quotation added!");
   } catch (error) {
     console.error("Error adding quotation:", error);
@@ -50,7 +50,7 @@ const addQuotation = async (orderId: string, quotationAmount: number) => {
 
 const deleteOrder = async (orderId: string) => {
   try {
-    await axios.delete(`http://localhost:4000/api/orders/${orderId}`);
+    await axios.delete(`https://printit.praisewebsolutions.com/api/orders/${orderId}`);
     toast.success("Order deleted!");
   } catch (error) {
     console.error("Error deleting order:", error);
@@ -95,6 +95,7 @@ const TableThree = () => {
     await deleteOrder(orderId);
     setOrders(orders.filter(order => order._id !== orderId));
   };
+
   if (loading) return <div>Loading...</div>;
   if (error) return <div>{error}</div>;
 
@@ -131,9 +132,14 @@ const TableThree = () => {
                   <p className="text-black dark:text-white">{order.copies}</p>
                 </td>
                 <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
-                  {order.file && order.file.name ? (
-                    <a href={order.file.uri} target="_blank" rel="noopener noreferrer" className="text-blue-600">
-                      {order.file.name}
+                  {order.files ? (
+                    <a
+                      href={order.files.uri}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-600"
+                    >
+                      {order.files?.name}
                     </a>
                   ) : (
                     <p className="text-gray-500">No file</p>
