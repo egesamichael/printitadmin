@@ -1,6 +1,6 @@
 import Breadcrumb from "@/components/Breadcrumbs/Breadcrumb";
 
-import TableThree from "@/components/Tables/TableThree";
+import EquipmentsTable from "@/components/Tables/EquipmentTable";
 
 
 
@@ -14,18 +14,18 @@ export const metadata: Metadata = {
     "Printing made easy",
 };
 
-const TablesPage = () => {
+const Equipment = () => {
   return (
     <DefaultLayout>
       <Breadcrumb pageName="Tables" />
 
       <div className="flex flex-col gap-10">
        
-        <TableThree />
+        <EquipmentsTable />
       
       </div>
     </DefaultLayout>
   );
 };
 
-export default TablesPage;
+export default Equipment;

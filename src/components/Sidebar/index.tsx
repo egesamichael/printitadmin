@@ -80,6 +80,15 @@ const menuGroups = [
         route: "/users",
       },
       {
+        icon: <svg> {/* Equipment SVG */} </svg>,
+        label: "Equipment",
+        route: "/equipment",
+        subMenu: [
+          { label: "List Equipment", route: "/equipment/list" },
+          { label: "Add Equipment", route: "/equipment/add" },
+        ],
+      },
+      {
         icon: (
           <svg
             className="fill-current"
@@ -139,6 +148,8 @@ const menuGroups = [
         label: "Settings",
         route: "/settings",
       },
+
+      
     ],
   },
 ];
