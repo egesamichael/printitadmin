@@ -23,10 +23,15 @@ interface Order {
   description: string;
   printType: string;
   copies: number;
+  documentFormat: string;
+  paperSize: string;
+  descriptionType: string;
+  textDescription: string;
   status: string;
   paymentStatus: string;
   quotationAmount?: number;
   files?: FileData[];
+  createdAt?: string;
 }
 
 const fetchOrders = async () => {
@@ -40,18 +45,27 @@ const fetchOrders = async () => {
 
 const acceptOrder = async (orderId: string) => {
   try {
-    await axios.patch(`http://192.168.0.109:3010/orders/${orderId}`, { status: 'Accepted' });
+    const response = await axios.patch(`http://192.168.0.109:3010/requests/${orderId}`, { status: "Accepted" });
+    if (response.data.message !== "Order status updated successfully") {
+      throw new Error(response.data.message);
+    }
     toast.success("Order accepted!");
+    return response.data.request;
   } catch (error) {
     console.error("Error accepting order:", error);
     toast.error("Failed to accept order");
   }
 };
 
+
 const addQuotation = async (orderId: string, quotationAmount: number) => {
   try {
-    await axios.patch(`http://192.168.0.109:3010/orders/${orderId}/quotation`, { quotationAmount });
+    const response = await axios.patch(`http://192.168.0.109:3010/requests/${orderId}/quotation`, { quotationAmount });
+    if (response.data.message !== "Quotation added successfully") {
+      throw new Error(response.data.message);
+    }
     toast.success("Quotation added!");
+    return response.data.request;
   } catch (error) {
     console.error("Error adding quotation:", error);
     toast.error("Failed to add quotation");
@@ -60,15 +74,16 @@ const addQuotation = async (orderId: string, quotationAmount: number) => {
 
 const deleteOrder = async (orderId: string) => {
   try {
-    await axios.delete(`http://192.168.0.109:3010/orders/${orderId}`);
+    const response = await axios.delete(`http://192.168.0.109:3010/requests/${orderId}`);
     toast.success("Order deleted!");
+    return response.data;
   } catch (error) {
     console.error("Error deleting order:", error);
     toast.error("Failed to delete order");
   }
 };
 
-const TableThree = () => {
+const TableWithAdditionalFields = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -185,17 +200,25 @@ const TableThree = () => {
         <table className="w-full table-auto border-collapse">
           <thead>
             <tr className="bg-gray-100 text-left dark:bg-meta-4">
-              <th className="min-w-[180px] px-4 py-4 font-medium text-black dark:text-white xl:pl-11">
-                Document Type
+             
+              <th className="min-w-[90px] px-4 py-4 font-medium text-black dark:text-white">
+                Print
               </th>
-              <th className="min-w-[180px] px-4 py-4 font-medium text-black dark:text-white">
-                Description
+              <th className="min-w-[90px] px-4 py-4 font-medium text-black dark:text-white">
+                Copies
               </th>
-              <th className="min-w-[120px] px-4 py-4 font-medium text-black dark:text-white">
-                Print Type
+              <th className="min-w-[90px] px-4 py-4 font-medium text-black dark:text-white">
+               Type
+              </th>
+              <th className="min-w-[90px] px-4 py-4 font-medium text-black dark:text-white">
+              Size
+              </th>
+            
+              <th className="min-w-[100px] px-4 py-4 font-medium text-black dark:text-white">
+                Description 
               </th>
               <th className="min-w-[100px] px-4 py-4 font-medium text-black dark:text-white">
-                Copies
+                Created At
               </th>
               <th className="px-4 py-4 font-medium text-black dark:text-white">
                 Files
@@ -215,90 +238,104 @@ const TableThree = () => {
             </tr>
           </thead>
           <tbody>
-            {orders.map((order) => (
-              <tr key={order._id} className="border-b border-[#eee] dark:border-strokedark hover:bg-gray-50">
-                <td className="px-4 py-5 pl-9 dark:border-strokedark xl:pl-11 text-black dark:text-white">
-                  {order.documentType}
-                </td>
-                <td className="px-4 py-5 dark:border-strokedark text-black dark:text-white">
-                  {order.description}
-                </td>
-                <td className="px-4 py-5 dark:border-strokedark text-black dark:text-white">
-                  {order.printType}
-                </td>
-                <td className="px-4 py-5 dark:border-strokedark text-black dark:text-white">
-                  {order.copies}
-                </td>
-                <td className="px-4 py-5 dark:border-strokedark text-black dark:text-white">
-                  {order.files && order.files.length > 0 ? (
-                    <div className="space-y-1">
-                      {order.files.map((file) => (
-                        <a
-                          key={file._id}
-                          href={`http://192.168.0.109:3010/${file.path}`}
-                          
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-blue-600 hover:underline flex items-center"
-                        >
-                          <FaDownload className="mr-1" />
-                          {file.name}
-                        </a>
-                      ))}
-                    </div>
-                  ) : (
-                    <span className="text-gray-500">No files</span>
-                  )}
-                </td>
-                <td className="px-4 py-5 dark:border-strokedark">
-                  <span
-                    className={`inline-flex items-center px-3 py-1 rounded-full text-white text-sm ${
-                      order.status === 'Accepted' ? 'bg-green-500' : 'bg-gray-400'
-                    }`}
-                  >
-                    {order.status}
-                  </span>
-                </td>
-                <td className="px-4 py-5 dark:border-strokedark">
-                  <span
-                    className={`inline-flex items-center px-3 py-1 rounded-full text-white text-sm ${
-                      order.paymentStatus === 'Paid' ? 'bg-green-500' : 'bg-red-500'
-                    }`}
-                  >
-                    {order.paymentStatus === 'Paid' ? (
-                      <>
-                        <FaDollarSign className="mr-1" />
-                        Paid
-                      </>
+            {orders.map((order) => {
+              const createdDate = order.createdAt ? new Date(order.createdAt).toLocaleString() : 'N/A';
+              return (
+                <tr key={order._id} className="border-b border-[#eee] dark:border-strokedark hover:bg-gray-50">
+                 
+                  <td className="px-4 py-5 dark:border-strokedark text-black dark:text-white">
+                    {order.printType}
+                  </td>
+                  <td className="px-4 py-5 dark:border-strokedark text-black dark:text-white">
+                    {order.copies}
+                  </td>
+                  <td className="px-4 py-5 dark:border-strokedark text-black dark:text-white">
+                    {order.documentFormat}
+                  </td>
+                  <td className="px-4 py-5 dark:border-strokedark text-black dark:text-white">
+                    {order.paperSize}
+                  </td>
+                
+                  <td className="px-4 py-5 dark:border-strokedark text-black dark:text-white">
+                    {order.descriptionType === 'Text' ? (
+                      order.textDescription || <span className="text-gray-500 italic">None</span>
                     ) : (
-                      <>
-                        <FaCheck className="mr-1" />
-                        {order.paymentStatus}
-                      </>
+                      // Placeholder for audio player
+                      <div className="italic text-gray-500">Audio description coming soon...</div>
                     )}
-                  </span>
-                </td>
-                <td className="px-4 py-5 dark:border-strokedark text-black dark:text-white">
-                  {order.quotationAmount ? (
-                    <span className="inline-block text-sm font-medium">
-                      ${order.quotationAmount.toFixed(2)}
-                    </span>
-                  ) : (
-                    <span className="text-gray-500 italic">Not set</span>
-                  )}
-                </td>
-                <td className="px-4 py-5 dark:border-strokedark">
-                  <div className="flex items-center space-x-3.5">
-                    {order.status !== 'Accepted' ? (
-                      <button
-                        onClick={() => handleAccept(order._id)}
-                        className="text-green-600 hover:text-green-800"
-                        title="Accept Order"
-                      >
-                        <FaCheck />
-                      </button>
+                  </td>
+                  <td className="px-4 py-5 dark:border-strokedark text-black dark:text-white">
+                    {createdDate}
+                  </td>
+                  <td className="px-4 py-5 dark:border-strokedark text-black dark:text-white">
+                    {order.files && order.files.length > 0 ? (
+                      <div className="space-y-1">
+                        {order.files.map((file) => (
+                          <a
+                            key={file._id}
+                            href={`http://192.168.0.109:3010/${file.path}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-600 hover:underline flex items-center"
+                          >
+                          
+                            {file.name}
+                          </a>
+                        ))}
+                      </div>
                     ) : (
-                      order.paymentStatus !== 'Paid' && (
+                      <span className="text-gray-500">No files</span>
+                    )}
+                  </td>
+                  <td className="px-4 py-5 dark:border-strokedark">
+                    <span
+                      className={`inline-flex items-center px-3 py-1 rounded-full text-white text-sm ${
+                        order.status === 'Accepted' ? 'bg-green-500' : 'bg-gray-400'
+                      }`}
+                    >
+                      {order.status}
+                    </span>
+                  </td>
+                  <td className="px-4 py-5 dark:border-strokedark">
+                    <span
+                      className={`inline-flex items-center px-3 py-1 rounded-full text-white text-sm ${
+                        order.paymentStatus === 'Paid' ? 'bg-green-500' : 'bg-red-500'
+                      }`}
+                    >
+                      {order.paymentStatus === 'Paid' ? (
+                        <>
+                          <FaDollarSign className="mr-1" />
+                          Paid
+                        </>
+                      ) : (
+                        <>
+                          <FaCheck className="mr-1" />
+                          {order.paymentStatus}
+                        </>
+                      )}
+                    </span>
+                  </td>
+                  <td className="px-4 py-5 dark:border-strokedark text-black dark:text-white">
+                    {order.quotationAmount !== undefined && order.quotationAmount !== null ? (
+                      <span className="inline-block text-sm font-medium">
+                        ${order.quotationAmount.toFixed(2)}
+                      </span>
+                    ) : (
+                      <span className="text-gray-500 italic">Not set</span>
+                    )}
+                  </td>
+                  <td className="px-4 py-5 dark:border-strokedark">
+                    <div className="flex items-center space-x-3.5">
+                      {order.status !== 'Accepted' && (
+                        <button
+                          onClick={() => handleAccept(order._id)}
+                          className="text-green-600 hover:text-green-800"
+                          title="Accept Order"
+                        >
+                          <FaCheck />
+                        </button>
+                      )}
+                      {order.status === 'Accepted' && order.paymentStatus !== 'Paid' && (
                         <button
                           onClick={() => openQuotationModal(order._id, order.quotationAmount)}
                           className="text-blue-600 hover:text-blue-800"
@@ -306,22 +343,22 @@ const TableThree = () => {
                         >
                           <FaDollarSign />
                         </button>
-                      )
-                    )}
-                    <button className="text-blue-600 hover:text-blue-800" title="Edit Order">
-                      <FaEdit />
-                    </button>
-                    <button
-                      className="text-red-600 hover:text-red-800"
-                      onClick={() => handleDelete(order._id)}
-                      title="Delete Order"
-                    >
-                      <FaTrashAlt />
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
+                      )}
+                      <button className="text-blue-600 hover:text-blue-800" title="Edit Order">
+                        <FaEdit />
+                      </button>
+                      <button
+                        className="text-red-600 hover:text-red-800"
+                        onClick={() => handleDelete(order._id)}
+                        title="Delete Order"
+                      >
+                        <FaTrashAlt />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
@@ -329,4 +366,4 @@ const TableThree = () => {
   );
 };
 
-export default TableThree;
+export default TableWithAdditionalFields;
