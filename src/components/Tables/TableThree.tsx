@@ -36,7 +36,7 @@ interface Order {
 
 const fetchOrders = async () => {
   try {
-    const response = await axios.get("http://192.168.0.109:3010/requests");
+    const response = await axios.get("https://printitug.com/api/requests");
     return response.data;
   } catch (error) {
     throw new Error("Failed to fetch orders");
@@ -45,7 +45,7 @@ const fetchOrders = async () => {
 
 const acceptOrder = async (orderId: string) => {
   try {
-    const response = await axios.patch(`http://192.168.0.109:3010/requests/${orderId}`, { status: "Accepted" });
+    const response = await axios.patch(`https://printitug.com/api/requests/${orderId}`, { status: "Accepted" });
     if (response.data.message !== "Order status updated successfully") {
       throw new Error(response.data.message);
     }
@@ -60,7 +60,7 @@ const acceptOrder = async (orderId: string) => {
 
 const addQuotation = async (orderId: string, quotationAmount: number) => {
   try {
-    const response = await axios.patch(`http://192.168.0.109:3010/requests/${orderId}/quotation`, { quotationAmount });
+    const response = await axios.patch(`https://printitug.com/api/requests/${orderId}/quotation`, { quotationAmount });
     if (response.data.message !== "Quotation added successfully") {
       throw new Error(response.data.message);
     }
@@ -74,7 +74,7 @@ const addQuotation = async (orderId: string, quotationAmount: number) => {
 
 const deleteOrder = async (orderId: string) => {
   try {
-    const response = await axios.delete(`http://192.168.0.109:3010/requests/${orderId}`);
+    const response = await axios.delete(`https://printitug.com/api/requests/${orderId}`);
     toast.success("Order deleted!");
     return response.data;
   } catch (error) {
@@ -273,7 +273,7 @@ const TableWithAdditionalFields = () => {
                         {order.files.map((file) => (
                           <a
                             key={file._id}
-                            href={`http://192.168.0.109:3010/${file.path}`}
+                            href={`http://printitug.com/${file.path}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="text-blue-600 hover:underline flex items-center"
@@ -318,7 +318,7 @@ const TableWithAdditionalFields = () => {
                   <td className="px-4 py-5 dark:border-strokedark text-black dark:text-white">
                     {order.quotationAmount !== undefined && order.quotationAmount !== null ? (
                       <span className="inline-block text-sm font-medium">
-                        ${order.quotationAmount.toFixed(2)}
+                        UGX {order.quotationAmount.toFixed(2)}
                       </span>
                     ) : (
                       <span className="text-gray-500 italic">Not set</span>
