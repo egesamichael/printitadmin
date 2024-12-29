@@ -1,69 +1,91 @@
-import React from "react";
+import React, { useState } from "react";
 import Link from "next/link";
-import SidebarDropdown from "@/components/Sidebar/SidebarDropdown";
 import { usePathname } from "next/navigation";
 
-const SidebarItem = ({ item, pageName, setPageName }: any) => {
-  const handleClick = () => {
-    const updatedPageName =
-      pageName !== item.label.toLowerCase() ? item.label.toLowerCase() : "";
-    return setPageName(updatedPageName);
+interface SidebarItemProps {
+  item: {
+    label: string;
+    route?: string;
+    children?: SidebarItemProps["item"][]; // recursive type
   };
+  level?: number; // optional: for styling indentation
+}
 
+const SidebarItem: React.FC<SidebarItemProps> = ({ item, level = 0 }) => {
   const pathname = usePathname();
+  const [isOpen, setIsOpen] = useState(false);
 
-  const isActive = (item: any) => {
-    if (item.route === pathname) return true;
-    if (item.children) {
-      return item.children.some((child: any) => isActive(child));
-    }
-    return false;
+  // Check if this item has children
+  const hasChildren = item.children && item.children.length > 0;
+
+  // Decide if current route is 'active'
+  const isActiveRoute = item.route === pathname;
+
+  // Toggle sub-menu when parent is clicked
+  const handleToggle = () => {
+    // Only toggle if there are children
+    if (hasChildren) setIsOpen((prev) => !prev);
   };
-
-  const isItemActive = isActive(item);
 
   return (
-    <>
-      <li>
-        <Link
-          href={item.route}
-          onClick={handleClick}
-          className={`${isItemActive ? "bg-graydark dark:bg-meta-4" : ""} group relative flex items-center gap-2.5 rounded-sm px-4 py-2 font-medium text-bodydark1 duration-300 ease-in-out hover:bg-graydark dark:hover:bg-meta-4`}
+    <li>
+      {/* Parent Row */}
+      {hasChildren ? (
+        // If item has children, render a "button-like" div (not a Link) so it won't navigate
+        <div
+          onClick={handleToggle}
+          className={`
+            flex items-center justify-between
+            px-4 py-2 cursor-pointer
+            ${isActiveRoute ? "bg-gray-700 text-white" : "text-gray-300"}
+            hover:bg-gray-600
+            transition-colors
+            ml-${level * 2} // Optional: indent for sub-level
+          `}
         >
-          {/* {item.icon} */}
-          {item.label}
-          {item.children && (
-            <svg
-              className={`absolute right-4 top-1/2 -translate-y-1/2 fill-current ${
-                pageName === item.label.toLowerCase() && "rotate-180"
-              }`}
-              width="20"
-              height="20"
-              viewBox="0 0 20 20"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                fillRule="evenodd"
-                clipRule="evenodd"
-                d="M4.41107 6.9107C4.73651 6.58527 5.26414 6.58527 5.58958 6.9107L10.0003 11.3214L14.4111 6.91071C14.7365 6.58527 15.2641 6.58527 15.5896 6.91071C15.915 7.23614 15.915 7.76378 15.5896 8.08922L10.5896 13.0892C10.2641 13.4147 9.73651 13.4147 9.41107 13.0892L4.41107 8.08922C4.08563 7.76378 4.08563 7.23614 4.41107 6.9107Z"
-                fill=""
-              />
-            </svg>
-          )}
-        </Link>
-
-        {item.children && (
-          <div
-            className={`translate transform overflow-hidden ${
-              pageName !== item.label.toLowerCase() && "hidden"
+          <span>{item.label}</span>
+          {/* Arrow icon, rotates if open */}
+          <svg
+            className={`h-4 w-4 transform transition-transform ${
+              isOpen ? "rotate-180" : ""
             }`}
+            fill="currentColor"
+            viewBox="0 0 20 20"
           >
-            <SidebarDropdown item={item.children} />
-          </div>
-        )}
-      </li>
-    </>
+            <path d="M5.23 7.21a.75.75 0 011.06.02L10 11l3.72-3.77a.75.75 0 011.08 1.04l-4.25 4.3a.75.75 0 01-1.08 0l-4.25-4.3a.75.75 0 01.02-1.06z" />
+          </svg>
+        </div>
+      ) : (
+        // If no children, just render a Link
+        <Link
+          href={item.route || "#"}
+          className={`
+            block px-4 py-2
+            ${isActiveRoute ? "bg-gray-700 text-white" : "text-gray-300"}
+            hover:bg-gray-600
+            transition-colors
+            ml-${level * 2} // Optional: indent for sub-level
+          `}
+        >
+          {item.label}
+        </Link>
+      )}
+
+      {/* Sub-menu */}
+      {hasChildren && (
+        <ul
+          className={`
+            overflow-hidden transition-all
+            ${isOpen ? "max-h-[1000px]" : "max-h-0"} 
+            bg-gray-800 // optional styling for sub-level
+          `}
+        >
+          {item.children?.map((child, i) => (
+            <SidebarItem key={i} item={child} level={level + 1} />
+          ))}
+        </ul>
+      )}
+    </li>
   );
 };
 
