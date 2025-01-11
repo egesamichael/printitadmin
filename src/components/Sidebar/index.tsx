@@ -51,6 +51,63 @@ const menuGroups = [
           },
         ],
       },
+
+      ,
+      {
+        label: "Brand",
+        children: [
+          { label: "View", route: "/design/view" },
+          {
+            label: "Orders",
+            children: [
+              { label: "Drafts", route: "/design/orders/drafts" },
+              { label: "Pending", route: "/design/orders/pending" },
+              { label: "Shipped", route: "/design/orders/shipped" },
+            ],
+          },
+        ],
+      },
+      
+      {
+        label: "Bid",
+        children: [
+          { label: "View", route: "/design/view" },
+          {
+            label: "Orders",
+            route: "/bids/orders",
+          },
+        ],
+      },
+      ,
+      {
+        label: "Stationary",
+        children: [
+          { label: "View", route: "/design/view" },
+          {
+            label: "Orders",
+            children: [
+              { label: "Drafts", route: "/design/orders/drafts" },
+              { label: "Pending", route: "/design/orders/pending" },
+              { label: "Shipped", route: "/design/orders/shipped" },
+            ],
+          },
+        ],
+      },
+      ,
+      {
+        label: "Equipment",
+        children: [
+          { label: "View", route: "/design/view" },
+          {
+            label: "Orders",
+            children: [
+              { label: "Drafts", route: "/design/orders/drafts" },
+              { label: "Pending", route: "/design/orders/pending" },
+              { label: "Shipped", route: "/design/orders/shipped" },
+            ],
+          },
+        ],
+      },
       {
         label: "Users",
         route: "/users",
