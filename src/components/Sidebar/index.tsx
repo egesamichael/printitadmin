@@ -56,7 +56,7 @@ const menuGroups = [
       {
         label: "Brand",
         children: [
-          { label: "View", route: "/design/view" },
+          { label: "View", route: "/brand/view" },
           {
             label: "Orders",
             children: [
@@ -82,30 +82,18 @@ const menuGroups = [
       {
         label: "Stationary",
         children: [
-          { label: "View", route: "/design/view" },
+          { label: "View", route: "/stationary/view" },
           {
-            label: "Orders",
-            children: [
-              { label: "Drafts", route: "/design/orders/drafts" },
-              { label: "Pending", route: "/design/orders/pending" },
-              { label: "Shipped", route: "/design/orders/shipped" },
-            ],
-          },
+            label: "Orders", },
         ],
       },
       ,
       {
         label: "Equipment",
         children: [
-          { label: "View", route: "/design/view" },
-          {
-            label: "Orders",
-            children: [
-              { label: "Drafts", route: "/design/orders/drafts" },
-              { label: "Pending", route: "/design/orders/pending" },
-              { label: "Shipped", route: "/design/orders/shipped" },
-            ],
-          },
+          { label: "Categories", route: "/equipment/view" },
+          { label: "Products", route: "/equipment/products" },
+          { label: "Orders", },
         ],
       },
       {

@@ -1,6 +1,6 @@
 import Breadcrumb from "@/components/Breadcrumbs/Breadcrumb";
 
-import EquipmentsTable from "@/components/Tables/EquipmentTable";
+import DesignPage from "@/components/Tables/Design";
 
 
 
@@ -21,7 +21,7 @@ const Equipment = () => {
 
       <div className="flex flex-col gap-10">
        
-        <EquipmentsTable />
+        <DesignPage />
       
       </div>
     </DefaultLayout>
