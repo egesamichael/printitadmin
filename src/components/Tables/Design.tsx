@@ -1,192 +1,134 @@
 "use client";
 import { useState, useEffect } from "react";
-import axios from "../axiosConfig";
-import { FaEdit, FaTrashAlt, FaPlus } from "react-icons/fa";
+import axios from "@/components/axiosConfig";
+import { FaTrashAlt, FaPlus, FaChevronLeft, FaChevronRight } from "react-icons/fa";
 import toast, { Toaster } from "react-hot-toast";
-import { useRouter } from "next/navigation"; // Import router
+import { useRouter } from "next/navigation";
 
-interface Design {
+interface Category {
   _id: string;
   name: string;
-  photo?: string; // Correctly typed as string if photo is a URL or filename
-  description?: string; // Added missing description field
-  price?: number; // Added missing price field
+  photo?: string;
 }
 
-const fetchCategories = async () => {
+const fetchCategories = async (page: number, limit: number) => {
   try {
-    const response = await axios.get("/Design");
+    const response = await axios.get(`/equipments?page=${page}&limit=${limit}`);
+    // Log the API response to check its structure
+    console.log("API Response:", response.data);
+    if (!response.data || !response.data.categories) {
+      throw new Error("Categories data is missing");
+    }
     return response.data;
   } catch (error) {
-    throw new Error("Failed to fetch categories");
+    throw new Error(`Failed to fetch categories: ${error.message}`);
   }
 };
 
-const createCategory = async (data: Design) => {
-  const formData = new FormData();
-  
-  formData.append("name", data.name); // Ensure backend expects "name"
-  if (data.photo) {
-    formData.append("image", data.photo); // Changed "photo" to "image" (use correct name)
-  }
-  if (data.description) {
-    formData.append("description", data.description); // Added description field
-  }
-  if (data.price !== undefined) {
-    formData.append("price", data.price.toString()); // Added price field
-  }
-  
+const deleteCategory = async (id: string, refresh: () => void) => {
   try {
-    const response = await axios.post("/Design", formData, {
-      headers: { "Content-Type": "multipart/form-data" },
-    });
-    toast.success("Category added successfully!");
-    return response.data;
-  } catch (error) {
-    console.error("Error creating category:", error);
-    toast.error("Failed to add category");
-  }
-};
-
-const deleteCategory = async (id: string) => {
-  try {
-    await axios.delete(`/Design/${id}`);
+    await axios.delete(`/equipments/${id}`);
     toast.success("Category deleted successfully!");
+    refresh();
   } catch (error) {
     console.error("Error deleting category:", error);
     toast.error("Failed to delete category");
   }
 };
 
-const DesignPage = () => {
-  const [categories, setCategories] = useState<Design[]>([]);
+const CategoriesPage = () => {
+  const [categories, setCategories] = useState<Category[]>([]); // Initialize as an empty array
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [showCategoryModal, setShowCategoryModal] = useState(false);
-  const [newCategory, setNewCategory] = useState<Design>({
-    name: "",
-    photo: "", // Initialize as an empty string or null
-    description: "", // Initialize description
-    price: undefined, // Initialize price
-  });
+  const [page, setPage] = useState(1);
+  const limit = 5;
+  const [totalPages, setTotalPages] = useState(1);
   const router = useRouter();
 
+  const loadCategories = async () => {
+    setLoading(true);
+    try {
+      const { categories, totalPages } = await fetchCategories(page, limit); // Access 'categories' from API response
+      console.log("Fetched Categories:", categories); // Log the categories
+      setCategories(categories); // Set categories to state
+      setTotalPages(totalPages);
+    } catch (error) {
+      setError(`Error fetching categories: ${error.message}`);
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const loadCategories = async () => {
-      try {
-        const categoriesData = await fetchCategories();
-        setCategories(categoriesData || []);
-      } catch (error) {
-        setError("Error fetching categories");
-        console.error("Error fetching categories:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
     loadCategories();
-  }, []);
+  }, [page]);
 
   return (
-    <div>
+    <div className="p-6 bg-gray-100 min-h-screen">
       <Toaster position="top-right" reverseOrder={false} />
-      <div className="flex justify-between mb-4">
-        <h2 className="text-xl font-bold">Categories</h2>
-        <button
-          className="bg-green-600 text-white px-4 py-2 rounded"
-          onClick={() => setShowCategoryModal(true)}
-        >
-          <FaPlus className="inline mr-2" /> Add Category
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-2xl font-bold">Categories</h2>
+        <button className="bg-green-600 text-white px-4 py-2 rounded flex items-center">
+          <FaPlus className="mr-2" /> Add Category
         </button>
       </div>
       {error && <p className="text-red-500">{error}</p>}
       {loading ? (
-        <p>Loading...</p>
+        <p className="text-center">Loading...</p>
       ) : (
-        <table className="min-w-full bg-white border border-gray-200">
-          <thead>
-            <tr>
-              <th className="py-2 px-4 border-b">Name</th>
-              <th className="py-2 px-4 border-b">Image</th>
-              <th className="py-2 px-4 border-b">Description</th>
-              <th className="py-2 px-4 border-b">Price</th>
-              <th className="py-2 px-4 border-b">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {categories.map((category) => (
-              <tr key={category._id}>
-                <td
-                  className="py-2 px-4 border-b cursor-pointer text-blue-500"
-                  onClick={() =>
-                    router.push(`http://localhost:3000/design/products/${category._id}`)
-                  }
-                >
-                  {category.name}
-                </td>
-                <td className="py-2 px-4 border-b">
-                  {category.photo ? (
-                    <img src={`/uploads/${category.photo}`} alt={category.name} className="h-12 w-12 object-cover" />
-                  ) : (
-                    <span>No image</span>
-                  )}
-                </td>
-                <td className="py-2 px-4 border-b">{category.description}</td>
-                <td className="py-2 px-4 border-b">${category.price}</td>
-                <td className="py-2 px-4 border-b">
-                  <button className="text-red-600" onClick={() => deleteCategory(category._id)}>
-                    <FaTrashAlt />
-                  </button>
-                </td>
+        <div className="bg-white shadow-md rounded-lg p-4">
+          <table className="w-full border-collapse">
+            <thead>
+              <tr className="bg-gray-200 text-gray-700">
+                <th className="py-3 px-4 border">Name</th>
+                <th className="py-3 px-4 border">Image</th>
+                <th className="py-3 px-4 border">Actions</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
-
-      {/* Modal to Add Category */}
-      {showCategoryModal && (
-        <div className="fixed inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50">
-          <div className="bg-white p-6 rounded shadow-md">
-            <h3 className="text-lg font-bold mb-4">Add Category</h3>
-            <input
-              type="text"
-              placeholder="Category Name"
-              value={newCategory.name}
-              onChange={(e) => setNewCategory({ ...newCategory, name: e.target.value })}
-              className="border px-4 py-2 w-full mb-4"
-            />
-            <textarea
-              placeholder="Description"
-              value={newCategory.description}
-              onChange={(e) => setNewCategory({ ...newCategory, description: e.target.value })}
-              className="border px-4 py-2 w-full mb-4"
-            />
-            <input
-              type="number"
-              placeholder="Price"
-              value={newCategory.price || ""}
-              onChange={(e) => setNewCategory({ ...newCategory, price: parseFloat(e.target.value) })}
-              className="border px-4 py-2 w-full mb-4"
-            />
-            <input
-              type="file"
-              onChange={(e) => setNewCategory({ ...newCategory, photo: e.target.files?.[0] })}
-              className="border px-4 py-2 w-full mb-4"
-            />
+            </thead>
+            <tbody>
+              {categories.map((category) => (
+                <tr key={category._id} className="hover:bg-gray-100">
+                  <td
+                    className="py-3 px-4 border cursor-pointer text-blue-600 hover:underline"
+                    onClick={() => router.push(`/equipment/products/${category._id}`)}
+                  >
+                    {category.name}
+                  </td>
+                  <td className="py-3 px-4 border text-center">
+                    <img
+                      src={`https://printitug.com/api/uploads/${category.photo}`}
+                      alt={category.name}
+                      className="h-12 w-12 object-cover mx-auto rounded"
+                    />
+                  </td>
+                  <td className="py-3 px-4 border text-center">
+                    <button
+                      className="text-red-600 hover:text-red-800"
+                      onClick={() => deleteCategory(category._id, loadCategories)}
+                    >
+                      <FaTrashAlt />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <div className="flex justify-between items-center mt-4">
             <button
-              className="bg-blue-600 text-white px-4 py-2 rounded"
-              onClick={async () => {
-                await createCategory(newCategory); // Ensure to handle the async result
-                setShowCategoryModal(false); // Close the modal after creation
-              }}
+              onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
+              disabled={page === 1}
+              className="px-4 py-2 bg-gray-300 rounded disabled:opacity-50"
             >
-              Save
+              <FaChevronLeft /> Prev
             </button>
+            <span>Page {page} of {totalPages}</span>
             <button
-              className="ml-2 bg-gray-400 text-white px-4 py-2 rounded"
-              onClick={() => setShowCategoryModal(false)}
+              onClick={() => setPage((prev) => Math.min(prev + 1, totalPages))}
+              disabled={page === totalPages}
+              className="px-4 py-2 bg-gray-300 rounded disabled:opacity-50"
             >
-              Cancel
+              Next <FaChevronRight />
             </button>
           </div>
         </div>
@@ -195,4 +137,4 @@ const DesignPage = () => {
   );
 };
 
-export default DesignPage;
+export default CategoriesPage;
